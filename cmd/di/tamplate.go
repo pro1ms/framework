@@ -12,11 +12,11 @@ import (
 
 func init() {
 	register(func(c *Container) {
-		c.Get{{ .Name }}()
+		c.{{ .Name }}()
 	})
 }
 
-func (c *Container) Get{{ .Name }}() *{{ .PackageName }}.{{ .Type }} {
+func (c *Container) {{ .Name }}() *{{ .PackageName }}.{{ .Type }} {
 	const key = "{{ .Name }}"
 	if s, ok := c.services.Load(key); ok {
 		return s.(*{{ .PackageName }}.{{ .Type }})
@@ -24,7 +24,7 @@ func (c *Container) Get{{ .Name }}() *{{ .PackageName }}.{{ .Type }} {
 
 	instance := {{ .PackageName }}.{{ .Func }}(
 		{{- range .Props }}
-		c.Get{{ .Inject }}(),
+		c.{{ .Inject }}(),
 		{{- end }}
 	)
 
@@ -38,18 +38,26 @@ package di
 
 import "sync"
 
+var (
+	instance *Container
+	once     sync.Once
+	registry []func(c *Container)
+)
+
 type Container struct {
 	services sync.Map
 }
-
-var registry []func(c *Container)
 
 func register(fn func(c *Container)) {
 	registry = append(registry, fn)
 }
 
-func NewContainer() *Container {
-	return &Container{}
+func GetContainer() *Container {
+	once.Do(func() {
+		instance = &Container{}
+		instance.InitAll()
+	})
+	return instance
 }
 
 func (c *Container) InitAll() {

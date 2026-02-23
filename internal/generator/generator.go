@@ -19,7 +19,7 @@ type Operation struct {
 
 func main() {
 	// 1. Читаем файл
-	data, err := os.ReadFile("api/api.yml")
+	data, err := os.ReadFile("http/http.yml")
 	if err != nil {
 		log.Fatalf("Ошибка чтения файла: %v", err)
 	}
