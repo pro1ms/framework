@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/gor/framework/internal/libs/project_info"
+	"github.com/pro1ms/framework/internal/libs/project_info"
 )
 
 type BridgeData struct {

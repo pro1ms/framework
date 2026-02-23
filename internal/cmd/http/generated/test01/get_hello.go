@@ -3,7 +3,7 @@ package test01
 import (
 	"context"
 
-	"github.com/gor/framework/internal/cmd/http/data/test01"
+	"github.com/pro1ms/framework/internal/cmd/http/data/test01"
 )
 
 type GetHello struct {

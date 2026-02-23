@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gor/framework/internal/cmd/http"
+	"github.com/pro1ms/framework/internal/cmd/http"
 )
 
 func main() {

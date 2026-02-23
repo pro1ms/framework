@@ -10,7 +10,7 @@ func TestGetProjectInfo(t *testing.T) {
 	info, err := GetProjectInfo("./")
 	assert.NoError(t, err)
 	assert.NotNil(t, info)
-	assert.Equal(t, "github.com/gor/framework", info.ModuleName)
+	assert.Equal(t, "github.com/pro1ms/framework", info.ModuleName)
 
 	info, err = GetProjectInfo("/Users/emris/www/")
 	assert.Error(t, err)

@@ -1,4 +1,4 @@
-module github.com/gor/framework
+module github.com/pro1ms/framework
 
 go 1.22.5
 

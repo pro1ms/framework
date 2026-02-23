@@ -9,7 +9,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/gor/framework/internal/libs/names"
+	"github.com/pro1ms/framework/internal/libs/names"
 )
 
 func (s *Scanner) write(destDir string) error {

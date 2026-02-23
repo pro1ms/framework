@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gor/framework/internal/libs/project_info"
+	"github.com/pro1ms/framework/internal/libs/project_info"
 )
 
 type Scanner struct {
