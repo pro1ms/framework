@@ -6,6 +6,8 @@ import (
 	"go/token"
 	"io/fs"
 	"path/filepath"
+
+	"github.com/pro1ms/framework/internal/libs/project_info"
 )
 
 func scanDependencies(root string) ([]Dependency, error) {
@@ -25,12 +27,17 @@ func scanDependencies(root string) ([]Dependency, error) {
 			return nil
 		}
 
+		info, err := project_info.GetProjectInfo(absRoot)
+		if err != nil {
+			return err
+		}
+
 		// 1. Вычисляем путь к папке, где лежит текущий файл
 		dir := filepath.Dir(path)
 		// 2. Вычисляем относительный путь от корня проекта
 		relDir, _ := filepath.Rel(absRoot, dir)
 		// 3. Формируем полный Import Path для Go
-		packagePath := filepath.Join("github.com/gor/example/internal", relDir)
+		packagePath := filepath.Join(info.ModuleName, "internal", relDir)
 		packagePath = filepath.ToSlash(packagePath)
 
 		file, err := parser.ParseFile(fileSet, path, nil, parser.ParseComments)
