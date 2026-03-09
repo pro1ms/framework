@@ -4,6 +4,7 @@ go 1.24.0
 
 require (
 	github.com/jackc/pgx/v5 v5.8.0
+	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/oapi-codegen/runtime v1.1.2
 	github.com/stretchr/testify v1.11.1

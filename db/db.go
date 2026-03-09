@@ -2,12 +2,12 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jmoiron/sqlx"
 )
 
 type Settings struct {
@@ -18,58 +18,33 @@ type Settings struct {
 }
 
 type Database struct {
-	Pool *pgxpool.Pool
+	db *sqlx.DB
 }
 
 func NewDatabase(settings Settings) *Database {
-	ctx := context.Background()
-
-	config, err := pgxpool.ParseConfig(settings.Conn)
-	if err != nil {
-		panic(fmt.Sprintf("failed to parse connection string: %v", err))
-	}
-
-	config.MaxConns = int32(settings.MaxOpenConns)
-	config.MinConns = int32(settings.MaxIdleConns)
-	config.MaxConnLifetime = settings.ConnMaxLifetime
-
-	pool, err := pgxpool.NewWithConfig(ctx, config)
+	db, err := sqlx.Connect("pgx", settings.Conn)
 	if err != nil {
 		panic(fmt.Sprintf("failed to connect to db: %v", err))
 	}
 
-	return &Database{Pool: pool}
+	db.SetMaxOpenConns(settings.MaxOpenConns)
+	db.SetMaxIdleConns(settings.MaxIdleConns)
+	db.SetConnMaxLifetime(settings.ConnMaxLifetime)
+
+	return &Database{db: db}
 }
 
-func Select[T any](ctx context.Context, d *Database, name string, query string, args ...any) ([]T, error) {
+func (d *Database) Select(ctx context.Context, name string, dest any, query string, args ...any) error {
 	ctxWithName := context.WithValue(ctx, "name", name)
-	rows, err := d.Pool.Query(ctxWithName, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	return pgx.CollectRows(rows, pgx.RowToStructByName[T])
+	return d.db.SelectContext(ctxWithName, dest, query, args...)
 }
 
-func Get[T any](ctx context.Context, d *Database, name string, query string, args ...any) (*T, error) {
+func (d *Database) Get(ctx context.Context, name string, dest any, query string, args ...any) error {
 	ctxWithName := context.WithValue(ctx, "name", name)
-	rows, err := d.Pool.Query(ctxWithName, query, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	r, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[T])
-	if err != nil {
-		return nil, err
-	}
-
-	return &r, nil
+	return d.db.GetContext(ctxWithName, dest, query, args...)
 }
 
-func (d *Database) Exec(ctx context.Context, name string, query string, args ...any) (pgconn.CommandTag, error) {
+func (d *Database) Exec(ctx context.Context, name string, query string, args ...any) (sql.Result, error) {
 	ctxWithName := context.WithValue(ctx, "name", name)
-	return d.Pool.Exec(ctxWithName, query, args...)
-}
-
-func (d *Database) Close() {
-	d.Pool.Close()
+	return d.db.ExecContext(ctxWithName, query, args...)
 }
