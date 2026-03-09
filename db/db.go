@@ -12,8 +12,8 @@ import (
 
 type Settings struct {
 	Conn            string
-	MaxIdleConns    int // В pgxpool это MinConns
-	MaxOpenConns    int // В pgxpool это MaxConns
+	MaxIdleConns    int
+	MaxOpenConns    int
 	ConnMaxLifetime time.Duration
 }
 
