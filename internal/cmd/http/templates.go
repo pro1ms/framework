@@ -11,7 +11,7 @@ import (
 type {{.HandlerName}}Handler struct {
 }
 
-// di:new(GetHelloHandler)
+// di:new({{.HandlerName}}Handler)
 func New{{.HandlerName}}Handler() *{{.HandlerName}}Handler {
 	return &{{.HandlerName}}Handler{}
 }

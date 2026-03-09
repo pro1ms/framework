@@ -14,8 +14,8 @@ type BridgeData struct {
 }
 
 type HandlerInfo struct {
-	Package    string // Например: "test01"
-	StructName string // Например: "GetHello"
+	Package    string
+	StructName string
 }
 
 func (s *Scanner) writeRouter(destDir string) error {

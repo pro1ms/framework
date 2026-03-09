@@ -44,7 +44,6 @@ func generateFile(outDir string, d Dependency, tmpl *template.Template) error {
 	}(f)
 
 	// Подготовка данных: вычленяем тип возвращаемого значения (упрощенно)
-	// Для NewHelloHandler -> HelloHandler
 	returnType := strings.TrimPrefix(d.Func, "New")
 
 	// Собираем уникальные импорты для аргументов (Props)
