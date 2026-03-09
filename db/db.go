@@ -35,16 +35,21 @@ func NewDatabase(settings Settings) *Database {
 }
 
 func (d *Database) Select(ctx context.Context, name string, dest any, query string, args ...any) error {
-	ctxWithName := context.WithValue(ctx, "name", name)
-	return d.db.SelectContext(ctxWithName, dest, query, args...)
+	return d.wrapError(name, d.db.SelectContext(ctx, dest, query, args...))
 }
 
 func (d *Database) Get(ctx context.Context, name string, dest any, query string, args ...any) error {
-	ctxWithName := context.WithValue(ctx, "name", name)
-	return d.db.GetContext(ctxWithName, dest, query, args...)
+	return d.wrapError(name, d.db.GetContext(ctx, dest, query, args...))
 }
 
 func (d *Database) Exec(ctx context.Context, name string, query string, args ...any) (sql.Result, error) {
-	ctxWithName := context.WithValue(ctx, "name", name)
-	return d.db.ExecContext(ctxWithName, query, args...)
+	res, err := d.db.ExecContext(ctx, query, args...)
+	return res, d.wrapError(name, err)
+}
+
+func (d *Database) wrapError(name string, err error) error {
+	if err != nil {
+		return fmt.Errorf("failed execute query '%s': %w", name, err)
+	}
+	return nil
 }
