@@ -1,6 +1,8 @@
 package framework
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -79,6 +81,24 @@ func (r *Router) HandleFunc(pattern string, handler func(http.ResponseWriter, *h
 
 // ServeHTTP implements http.Handler interface
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("PANIC RECOVERED: %v\n", err)
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+
+			res := struct {
+				Code    string
+				Message string
+			}{
+				Code:    "internal_server_error",
+				Message: "A critical error occurred on the server",
+			}
+			_ = json.NewEncoder(w).Encode(res)
+		}
+	}()
+
 	path := req.URL.Path
 	method := req.Method
 
