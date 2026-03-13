@@ -18,7 +18,7 @@ type Settings struct {
 }
 
 type Database struct {
-	db *sqlx.DB
+	pool *sqlx.DB
 }
 
 func NewDatabase(settings Settings) *Database {
@@ -31,19 +31,26 @@ func NewDatabase(settings Settings) *Database {
 	db.SetMaxIdleConns(settings.MaxIdleConns)
 	db.SetConnMaxLifetime(settings.ConnMaxLifetime)
 
-	return &Database{db: db}
+	return &Database{pool: db}
+}
+
+func (d *Database) db(ctx context.Context) sqlxContext {
+	if tx, ok := ctx.Value(txKey{}).(*sqlx.Tx); ok {
+		return tx
+	}
+	return d.pool
 }
 
 func (d *Database) Select(ctx context.Context, name string, dest any, query string, args ...any) error {
-	return d.wrapError(name, d.db.SelectContext(ctx, dest, query, args...))
+	return d.wrapError(name, d.db(ctx).SelectContext(ctx, dest, query, args...))
 }
 
 func (d *Database) Get(ctx context.Context, name string, dest any, query string, args ...any) error {
-	return d.wrapError(name, d.db.GetContext(ctx, dest, query, args...))
+	return d.wrapError(name, d.db(ctx).GetContext(ctx, dest, query, args...))
 }
 
 func (d *Database) Exec(ctx context.Context, name string, query string, args ...any) (sql.Result, error) {
-	res, err := d.db.ExecContext(ctx, query, args...)
+	res, err := d.db(ctx).ExecContext(ctx, query, args...)
 	return res, d.wrapError(name, err)
 }
 
@@ -51,5 +58,42 @@ func (d *Database) wrapError(name string, err error) error {
 	if err != nil {
 		return fmt.Errorf("failed execute query '%s': %w", name, err)
 	}
+	return nil
+}
+
+type txKey struct{}
+
+func (d *Database) TransactionV2(ctx context.Context, fn func(ctx context.Context) error) error {
+	if _, ok := ctx.Value(txKey{}).(*sqlx.Tx); ok {
+		return fn(ctx)
+	}
+
+	tx, err := d.pool.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback()
+			panic(p)
+		}
+	}()
+
+	txCtx := context.WithValue(ctx, txKey{}, tx)
+
+	err = fn(txCtx)
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return fmt.Errorf("error on rollback: %v (original error: %w)", rbErr, err)
+		}
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
 	return nil
 }
