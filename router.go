@@ -6,9 +6,12 @@ import (
 	"net/http"
 )
 
+type Middleware func(http.Handler) http.Handler
+
 // Router handles HTTP routing
 type Router struct {
-	routes map[string]map[string]http.HandlerFunc
+	routes      map[string]map[string]http.HandlerFunc
+	middlewares []Middleware
 }
 
 // NewRouter creates a new router instance
@@ -16,6 +19,10 @@ func NewRouter() *Router {
 	return &Router{
 		routes: make(map[string]map[string]http.HandlerFunc),
 	}
+}
+
+func (r *Router) AddMiddleware(mw Middleware) {
+	r.middlewares = append(r.middlewares, mw)
 }
 
 // registerRoute registers a route with a specific HTTP method
@@ -79,8 +86,16 @@ func (r *Router) HandleFunc(pattern string, handler func(http.ResponseWriter, *h
 	r.registerRoute(method, path, handler)
 }
 
-// ServeHTTP implements http.Handler interface
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	var finalHandler http.Handler = http.HandlerFunc(r.dispatch)
+	for i := len(r.middlewares) - 1; i >= 0; i-- {
+		finalHandler = r.middlewares[i](finalHandler)
+	}
+	finalHandler.ServeHTTP(w, req)
+}
+
+// ServeHTTP implements http.Handler interface
+func (r *Router) dispatch(w http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("PANIC RECOVERED: %v\n", err)
